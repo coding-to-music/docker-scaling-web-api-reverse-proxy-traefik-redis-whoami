@@ -26,6 +26,51 @@ git remote add origin git@github.com:coding-to-music/docker-scaling-web-api-reve
 git push -u origin main
 ```
 
+## Results
+
+docker compose up
+
+curl -H Host:whoami.docker.localhost http://127.0.0.1
+
+## docker-compose.yml
+
+```
+version: '3'
+services:
+  whoami:
+    image: containous/whoami # A container that exposes an API to show its IP address
+    labels:
+      - "traefik.frontend.rule=Host:whoami.docker.localhost"
+
+  redis:
+    image: redis
+
+    networks:
+      - back-tier
+
+  reverse-proxy:
+    image: traefik
+    command: --api --providers.docker --tracing.instana.logLevel="DEBUG" --accesslog # Enables the web UI and tells Traefik to listen to docker
+    ports:
+      - "80:80"     # The HTTP port
+      - "8080:8080" # The Web UI (enabled by --api)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
+
+
+networks:
+  front-tier:
+    driver: bridge
+  back-tier:
+    driver: bridge
+```
+
+http://whoami.docker.localhost/
+
+```
+
+```
+
 # docker-compose scaling web service demo
 
 A short demo on how to use docker-compose to create a Web Service connected to a load balancer and a Redis Database. Be sure to check out my blog post on the full overview - [brianchristner.io](https://www.brianchristner.io/how-to-scale-a-docker-container-with-docker-compose/)
